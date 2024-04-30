@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #define NAME_ARCH "C:\\Users\\Pepe\\Downloads\\clientes.csv"
+#define ARCH_DEST "C:\\Users\\Pepe\\Downloads\\destinos.csv"
 
 using namespace std;
 
@@ -29,24 +30,51 @@ struct CLIENTE {
     string Plazas;
 };
 
-vector<CLIENTE> leerCSV(const string& nombreArchivo) {
+struct PaqueteTuristico {
+    string nombre;
+    string Destino;
+    int dias;
+    double costo;
+    string partida;
+    string cod;
+    int vacantes;
+};
+
+class EmpresaTurismo {
+private:
     vector<CLIENTE> clientes;
-    ifstream archivo(nombreArchivo);
+    vector<PaqueteTuristico> paquetes;
+
+public:
+    void cargarClientesDesdeCSV();
+    void cargarPaquetesDesdeCSV();
+    void hacerReserva(const string& numberCliente, const string& codPaquete, int vacantes);
+    CLIENTE buscarCliente(const string& numeroBuscado);
+};
+
+CLIENTE EmpresaTurismo::buscarCliente(const string& numeroBuscado) {
+    for (const auto& cliente : clientes) {
+        if (cliente.Number == numeroBuscado) {
+            return cliente;
+        }
+    }
+    return CLIENTE();
+}
+
+void EmpresaTurismo::cargarClientesDesdeCSV() {
+    ifstream archivo(NAME_ARCH);
     string linea;
     char delimitador = ',';
 
     if (!archivo.is_open()) {
-        cerr << "Error al abrir el archivo." << endl;
-        return clientes;
+        cout << "Error al abrir el archivo de clientes." << endl;
+        return;
     }
-
-    getline(archivo, linea);
 
     while (getline(archivo, linea)) {
         stringstream stream(linea);
         CLIENTE cliente;
-
-		getline(stream, cliente.Number, delimitador);
+        getline(stream, cliente.Number, delimitador);
 		getline(stream, cliente.Gender, delimitador);
 		getline(stream, cliente.GivenName, delimitador);
 		getline(stream, cliente.MiddleInitial, delimitador);
@@ -65,35 +93,59 @@ vector<CLIENTE> leerCSV(const string& nombreArchivo) {
 		getline(stream, cliente.CCExpires, delimitador);
 		getline(stream, cliente.Codigo, delimitador);
 		getline(stream, cliente.Plazas, delimitador);
-
         clientes.push_back(cliente);
     }
 
     archivo.close();
-    return clientes;
 }
 
+void EmpresaTurismo::cargarPaquetesDesdeCSV(){
+    ifstream archivo(ARCH_DEST);
+    string linea;
+    char delimitador = ',';
+
+    if (!archivo.is_open()) {
+        cout << "Error al abrir el archivo de clientes." << endl;
+        return;
+    }
+
+    while (getline(archivo, linea)) {
+        stringstream stream(linea);
+        PaqueteTuristico paquete;
+        getline(stream, paquete.nombre, delimitador);
+		getline(stream, paquete.Destino, delimitador);
+		stream >> paquete.dias;
+		stream.ignore();
+		stream >> paquete.costo;
+		stream.ignore();
+		getline(stream, paquete.partida, delimitador);
+		getline(stream, paquete.cod, delimitador);
+		stream >> paquete.vacantes;
+		stream.ignore();
+        paquetes.push_back(paquete);
+    }
+
+    archivo.close();
+}
+
+
 int main() {
-    vector<CLIENTE> clientes = leerCSV(NAME_ARCH);
+    EmpresaTurismo empresa;
+    empresa.cargarClientesDesdeCSV();
     string numeroBuscado;
 
     cout << "Por favor, ingresa el número del cliente que deseas buscar: ";
     cin >> numeroBuscado;
 
-    bool encontrado = false;
-    for (const auto& cliente : clientes) {
-        if (cliente.Number == numeroBuscado) {
-            cout << "Cliente encontrado: " << endl;
-            cout << "Número: " << cliente.Number << ", "
-                 << "Género: " << cliente.Gender << ", "
-                 << "Nombre: " << cliente.GivenName << ", "
-                 << "Apellido: " << cliente.MiddleInitial << " " << cliente.Surname << endl;
-            encontrado = true;
-            break;
-        }
-    }
-
-    if (!encontrado) {
+    CLIENTE cliente = empresa.buscarCliente(numeroBuscado);
+    if (!cliente.Number.empty()) {
+        cout << "Cliente encontrado: " << endl;
+        cout << "Número: " << cliente.Number << ", "
+             << "   Género: " << cliente.Gender << ", "
+             << "   Nombre: " << cliente.GivenName << ", "
+             << "   Apellido: " << cliente.MiddleInitial << " " << cliente.Surname << endl
+             << "   Plazas: "<< cliente.Plazas << " "<< endl;
+    } else {
         cout << "Cliente con número " << numeroBuscado << " no encontrado." << endl;
     }
 
