@@ -50,6 +50,8 @@ public:
     void cargarPaquetesDesdeCSV();
     void hacerReserva(const string& numberCliente, const string& codPaquete, int vacantes);
     CLIENTE buscarCliente(const string& numeroBuscado);
+    PaqueteTuristico buscarPaquetePorDestino(const string& destinoBuscado);
+    void mostrarPaquetes();
 };
 
 CLIENTE EmpresaTurismo::buscarCliente(const string& numeroBuscado) {
@@ -59,6 +61,15 @@ CLIENTE EmpresaTurismo::buscarCliente(const string& numeroBuscado) {
         }
     }
     return CLIENTE();
+}
+
+PaqueteTuristico EmpresaTurismo::buscarPaquetePorDestino(const string& destinoBuscado) {
+    for (const auto& paquete : paquetes) {
+        if (paquete.Destino == destinoBuscado) {
+            return paquete;
+        }
+    }
+    return PaqueteTuristico();
 }
 
 void EmpresaTurismo::cargarClientesDesdeCSV() {
@@ -128,10 +139,25 @@ void EmpresaTurismo::cargarPaquetesDesdeCSV(){
     archivo.close();
 }
 
+void EmpresaTurismo::mostrarPaquetes() {
+    for (const auto& paquete : paquetes) {
+        cout << "Nombre: " << paquete.nombre << ", "
+             << "Destino: " << paquete.Destino << ", "
+             << "Días: " << paquete.dias << ", "
+             << "Costo: " << paquete.costo << ", "
+             << "Partida: " << paquete.partida << ", "
+             << "Código: " << paquete.cod << ", "
+             << "Vacantes: " << paquete.vacantes << endl;
+    }
+}
+
 
 int main() {
     EmpresaTurismo empresa;
     empresa.cargarClientesDesdeCSV();
+    empresa.cargarPaquetesDesdeCSV();
+    empresa.mostrarPaquetes();
+
     string numeroBuscado;
 
     cout << "Por favor, ingresa el número del cliente que deseas buscar: ";
@@ -141,12 +167,32 @@ int main() {
     if (!cliente.Number.empty()) {
         cout << "Cliente encontrado: " << endl;
         cout << "Número: " << cliente.Number << ", "
-             << "   Género: " << cliente.Gender << ", "
-             << "   Nombre: " << cliente.GivenName << ", "
-             << "   Apellido: " << cliente.MiddleInitial << " " << cliente.Surname << endl
-             << "   Plazas: "<< cliente.Plazas << " "<< endl;
+             << "Género: " << cliente.Gender << ", "
+             << "Nombre: " << cliente.GivenName << ", "
+             << "Apellido: " << cliente.MiddleInitial << " " << cliente.Surname << endl
+             << "Plazas: "<< cliente.Plazas << " "<< endl;
     } else {
         cout << "Cliente con número " << numeroBuscado << " no encontrado." << endl;
+    }
+
+    string destinoBuscado;
+    cout << "Por favor, ingresa el destino que deseas buscar: ";
+    cin.ignore();
+    getline(cin, destinoBuscado);
+
+
+    PaqueteTuristico paquete = empresa.buscarPaquetePorDestino(destinoBuscado);
+    if (!paquete.nombre.empty()) {
+        cout << "Paquete turístico encontrado: " << endl;
+        cout << "Nombre: " << paquete.nombre << ", "
+             << "Destino: " << paquete.Destino << ", "
+             << "Días: " << paquete.dias << ", "
+             << "Costo: " << paquete.costo << ", "
+             << "Partida: " << paquete.partida << ", "
+             << "Código: " << paquete.cod << ", "
+             << "Vacantes: " << paquete.vacantes << endl;
+    } else {
+        cout << "Paquete turístico con destino " << destinoBuscado << " no encontrado." << endl;
     }
 
     return 0;
