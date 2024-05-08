@@ -355,15 +355,14 @@ int main() {
             break;
         case 5:
             cout << "Ingrese el nombre del cliente: ";
-            fflush(stdin);
-            cin >> nombre_cliente;
+            cin.ignore();
+            getline(cin, nombre_cliente);
 
             cout << "Ingrese el destino: ";
-            fflush(stdin);
-            cin >> destino;
+            cin.ignore();
+            getline(cin, destino);
 
             cout << "Ingrese el número de plazas: ";
-            fflush(stdin);
             cin >> plazas;
 
     empresa_turismo.registrarEnCSV(nombre_cliente, destino, plazas);
