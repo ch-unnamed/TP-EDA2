@@ -6,10 +6,12 @@
 #include <iomanip>
 #include <locale.h>
 #include <windows.h>
+#include <wchar.h>
+#include <stdexcept>
 
-#define ARCH_CLIENTES "C:\\Users\\micaela\\Downloads\\clientes (3).csv"
-#define ARCH_DESTINOS "C:\\Users\\micaela\\Downloads\\destinos.csv"
-#define INGRESOS_ARCH "C:\\Users\\micaela\\Documents\\ingresos.txt"
+#define ARCH_CLIENTES "clientes.csv"
+#define ARCH_DESTINOS "destinos.csv"
+#define INGRESOS_ARCH "ingresos.txt"
 #define SALTO cout<<"\n";
 #define TAB cout<<"\t";
 
@@ -56,6 +58,7 @@ private:
     vector<clientes_struct> clientes_clase;
     vector<destinos_struct> destinos_clase;
     double ingresos;
+    bool registroCreado;
 
 public:
     void cargarClientesDesdeCSV();
@@ -66,8 +69,11 @@ public:
     destinos_struct& buscarPaquetePorCodigo(const string& codigoBuscado);
     void mostrarPaquetes();
     void mostrarIngresos();
-    void registrarEnCSV(const string& nombreCliente, const string& destino, int plazas);
+    void registrarEnCSV(const string& nombreCliente, const string& destino);
+    void mostrarRegistrosCSV(const string& nombreCliente, const string& destino);
+    Gestion() : registroCreado(false) {};
 };
+
 
 clientes_struct& Gestion::buscarCliente_por_numero(const string& numeroBuscado) {
     for (auto& cliente : clientes_clase) {
@@ -182,7 +188,8 @@ void Gestion::hacerReserva(const string& numberCliente, const string& codPaquete
     paquete.vacantes -= vacantes;
     ingresos += vacantes * paquete.costo;
 
-    cout << "Reserva realizada exitosamente.<< endl. Vacantes disponibles para el paquete " << codPaquete << " actualizadas a : " << vacantes << endl;
+    cout << "Reserva realizada exitosamente."<<endl;
+    cout << "Vacantes disponibles para el paquete " << codPaquete << " actualizadas a : " << paquete.vacantes << endl;
 
     ofstream archivo_destinos(ARCH_DESTINOS);
     if (!archivo_destinos.is_open()) {
@@ -198,7 +205,7 @@ void Gestion::hacerReserva(const string& numberCliente, const string& codPaquete
     }
     archivo_destinos.close();
 
-    registrarEnCSV(buscarCliente_por_numero(numberCliente).GivenName, buscarPaquetePorCodigo(codPaquete).Destino, vacantes);
+    registrarEnCSV(buscarCliente_por_numero(numberCliente).GivenName, buscarPaquetePorCodigo(codPaquete).Destino);
 }
 
 void Gestion::eliminarReserva(const string& numberCliente, const string& codPaquete, int vacantes) {
@@ -209,7 +216,6 @@ void Gestion::eliminarReserva(const string& numberCliente, const string& codPaqu
         cout << "Cliente o paquete no encontrado." << endl;
         return;
     }
-
 
     ifstream archivo(ARCH_CLIENTES);
     ofstream temp("temp.txt");
@@ -229,11 +235,9 @@ void Gestion::eliminarReserva(const string& numberCliente, const string& codPaqu
             paquete.vacantes += plazasReservadas;
         }
         else {
-
             temp << numCliente << "," << codPaqueteReservado << "," << plazasReservadas << endl;
         }
     }
-
     archivo.close();
     temp.close();
 
@@ -247,13 +251,11 @@ void Gestion::mostrarPaquetes() {
     cout << "Paquetes Turísticos Disponibles:" << endl;
     SALTO;
     for (const auto& paquete : destinos_clase) {
-        cout << "Nombre: " << paquete.nombre << ", "
-            << "Destino: " << paquete.Destino << ", "
-            << "Días: " << paquete.dias << ", "
-            << "Costo: $" << fixed << setprecision(2) << paquete.costo << ", "
-            << "Partida: " << paquete.partida << ", "
-            << "Código: " << paquete.cod << ", "
-            << "Vacantes Disponibles: " << paquete.vacantes << endl;
+        cout << "Nombre: [" << paquete.nombre << "], " << "Destino: [" << paquete.Destino << "], " << endl;
+        cout << "Días: [" << paquete.dias << "], " << "Costo: [$" << fixed << setprecision(2) << paquete.costo << "]" << endl;
+        cout << "Partida: " << paquete.partida << ", " << "Código: " << paquete.cod << endl;
+        cout << "Vacantes Disponibles: [" << paquete.vacantes << "]" << endl;
+        SALTO;
     }
 }
 
@@ -261,7 +263,7 @@ void Gestion::mostrarIngresos() {
     cout << "Ingresos totales de la empresa: $" << fixed << setprecision(2) << ingresos << endl;
 }
 
-void Gestion::registrarEnCSV(const string& nombreCliente, const string& destino, int plazas) {
+void Gestion::registrarEnCSV(const string& nombreCliente, const string& destino) {
     ofstream archivo("Registros.csv", ios::app);
 
     if (!archivo.is_open()) {
@@ -269,28 +271,52 @@ void Gestion::registrarEnCSV(const string& nombreCliente, const string& destino,
         return;
     }
 
-    archivo << nombreCliente << "," << destino << "," << plazas << endl;
+    archivo << nombreCliente << "," << destino << endl;
 
     cout << "Reserva registrada exitosamente en Registros.csv" << endl;
 
     archivo.close();
+    registroCreado = true;
+}
+
+void Gestion::mostrarRegistrosCSV(const string& nombreCliente, const string& destino) {
+    if (!registroCreado) {
+        cout << "No existe aun un registro creado." << endl;
+        return;
+    }
+
+    try {
+        ifstream archivo("Registros.csv");
+        if (!archivo.is_open()) {
+            throw runtime_error("Error al abrir el archivo.");
+        }
+
+        cout << "Registro de Reservas realizadas:" << endl;
+        SALTO;
+
+        string linea;
+        while (getline(archivo, linea)) {
+            cout << linea << endl;
+        }
+    }
+    catch (exception& e) {
+        cout << "Error Inesperado" << e.what() << endl;
+    }
 }
 
 int main() {
-    setlocale(LC_ALL, "spanish");
+    setlocale(LC_ALL, "");
     SetConsoleCP(1252);
     SetConsoleOutputCP(1252);
     system("COLOR 90");
 
     string nombre_cliente, destino;
-    int plazas;
 
     Gestion empresa_turismo;
     empresa_turismo.cargarClientesDesdeCSV();
     empresa_turismo.cargarPaquetesDesdeCSV();
-    //empresa_turismo.registrarEnCSV(nombre_cliente, destino, plazas);
 
-    cout << "Bienvenido a nuestra agencia de turismo. "<< endl;
+    cout << "Bienvenido a nuestra agencia de turismo. " << endl;
     SALTO;
 
     while (true) {
@@ -300,7 +326,8 @@ int main() {
         cout << "3. Eliminar Reserva" << endl;
         cout << "4. Mostrar Ingresos Totales de la Empresa" << endl;
         cout << "5. Crear Archivo de Registros" << endl;
-        cout << "6. Salir" << endl;
+        cout << "6. Mostrar Registro de Reservas" << endl;
+        cout << "7. Salir" << endl;
         cout << "Ingrese el número de la opción que desea ejecutar: ";
 
         int opcion;
@@ -359,15 +386,14 @@ int main() {
             getline(cin, nombre_cliente);
 
             cout << "Ingrese el destino: ";
-            cin.ignore();
             getline(cin, destino);
 
-            cout << "Ingrese el número de plazas: ";
-            cin >> plazas;
-
-    empresa_turismo.registrarEnCSV(nombre_cliente, destino, plazas);
-    break;
+            empresa_turismo.registrarEnCSV(nombre_cliente, destino);
+            break;
         case 6:
+                empresa_turismo.mostrarRegistrosCSV(nombre_cliente, destino);
+                break;
+        case 7:
             cout << "Gracias por utilizar nuestro servicio. ¡Hasta luego!" << endl;
             return 0;
         default:
