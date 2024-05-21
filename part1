@@ -12,6 +12,8 @@
 #define ARCH_CLIENTES "clientes.csv"
 #define ARCH_DESTINOS "destinos.csv"
 #define INGRESOS_ARCH "ingresos.txt"
+#define ARCH_PROMOCIONES "promociones.csv"
+
 #define SALTO cout<<"\n";
 #define TAB cout<<"\t";
 
@@ -71,6 +73,7 @@ public:
     void mostrarIngresos();
     void registrarEnCSV(const string& nombreCliente, const string& destino);
     void mostrarRegistrosCSV(const string& nombreCliente, const string& destino);
+    void manejarPromociones();
     Gestion() : registroCreado(false) {};
 };
 
@@ -304,6 +307,67 @@ void Gestion::mostrarRegistrosCSV(const string& nombreCliente, const string& des
     }
 }
 
+void Gestion::manejarPromociones() {
+    {
+        ifstream archivo(ARCH_PROMOCIONES);
+
+        if (!archivo.is_open()) {
+            ofstream archivo_creado(ARCH_PROMOCIONES);
+            archivo_creado.close();
+            cout << "Archivo 'promociones.csv' creado exitosamente." << endl;
+        }
+    }
+
+    cout << "¿Qué deseas hacer?\n1. Leer el archivo\n2. Escribir en el archivo\n3. Borrar una línea del archivo\n";
+    int opcion;
+    cin >> opcion;
+
+    switch (opcion) {
+    case 1: {
+        ifstream archivo_lectura(ARCH_PROMOCIONES);
+        string linea;
+        while (getline(archivo_lectura, linea)) {
+            cout << linea << endl;
+        }
+        break;
+    }
+    case 2: {
+        ofstream archivo_escritura(ARCH_PROMOCIONES, ios::app);
+        cout << "Introduce la información de la promoción en formato CSV: ";
+        string info_promocion;
+        cin.ignore();
+        getline(cin, info_promocion);
+        archivo_escritura << info_promocion << endl;
+        break;
+    }
+    case 3: {
+        ifstream archivo_lectura(ARCH_PROMOCIONES);
+        ofstream temp("temp.csv");
+        cout << "Introduce el número de línea que deseas borrar: ";
+        int num_linea, contador_linea = 0;
+        cin >> num_linea;
+        num_linea--;
+        string linea;
+        while (getline(archivo_lectura, linea)) {
+            if (contador_linea != num_linea)
+                temp << linea << endl;
+            contador_linea++;
+        }
+        temp.close();
+        if (remove(ARCH_PROMOCIONES) != 0) {
+            perror("Error eliminando el archivo");
+        } else {
+            cout << "Archivo eliminado exitosamente." << endl;
+        }
+        rename("temp.csv", ARCH_PROMOCIONES);
+        break;
+    }
+    default:
+        cout << "Opción no válida. Por favor, ingresa un número válido de opción." << endl;
+        break;
+    }
+}
+
 int main() {
     setlocale(LC_ALL, "");
     SetConsoleCP(1252);
@@ -327,7 +391,8 @@ int main() {
         cout << "4. Mostrar Ingresos Totales de la Empresa" << endl;
         cout << "5. Crear Archivo de Registros" << endl;
         cout << "6. Mostrar Registro de Reservas" << endl;
-        cout << "7. Salir" << endl;
+        cout << "7. Promociones" << endl;
+        cout << "8. SALIR" << endl;
         cout << "Ingrese el número de la opción que desea ejecutar: ";
 
         int opcion;
@@ -391,9 +456,12 @@ int main() {
             empresa_turismo.registrarEnCSV(nombre_cliente, destino);
             break;
         case 6:
-                empresa_turismo.mostrarRegistrosCSV(nombre_cliente, destino);
-                break;
+            empresa_turismo.mostrarRegistrosCSV(nombre_cliente, destino);
+            break;
         case 7:
+            empresa_turismo.manejarPromociones();
+            break;
+        case 8:
             cout << "Gracias por utilizar nuestro servicio. ¡Hasta luego!" << endl;
             return 0;
         default:
