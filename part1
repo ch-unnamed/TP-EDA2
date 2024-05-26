@@ -10,10 +10,10 @@
 #include <stdexcept>
 #include <ctime>
 
-#define ARCH_CLIENTES "clientes.csv"
-#define ARCH_DESTINOS "destinos.csv"
-#define INGRESOS_ARCH "ingresos.txt"
-#define ARCH_PROMOCIONES "promociones.csv"
+#define ARCH_CLIENTES "C:\\Users\\Pepe\\Downloads\\clientes (1).csv"
+#define ARCH_DESTINOS "C:\\Users\\Pepe\\Downloads\\destinos.csv"
+#define INGRESOS_ARCH "C:\\Users\\Pepe\\Downloads\\ingresos.txt"
+#define ARCH_PROMOCIONES "C:\\Users\\Pepe\\Downloads\\promociones.csv"
 
 #define SALTO cout<<"\n";
 #define TAB cout<<"\t";
