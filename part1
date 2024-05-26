@@ -8,6 +8,7 @@
 #include <windows.h>
 #include <wchar.h>
 #include <stdexcept>
+#include <ctime>
 
 #define ARCH_CLIENTES "clientes.csv"
 #define ARCH_DESTINOS "destinos.csv"
@@ -27,84 +28,114 @@ struct clientes_struct {
     string Number;
     string Gender;
     string GivenName;
-    string MiddleInitial;
+	string MiddleInitial;
     string Surname;
     string StreetAddress;
-    string City;
+	string City;
     string State;
     string ZipCode;
     string EmailAddress;
-    string TelephoneNumber;
+	string TelephoneNumber;
     string Birthday;
     string Age;
-    string CCType;
+	string CCType;
     string CCNumber;
     string CVV2;
     string CCExpires;
-    string Codigo;
+	string Codigo;
     string Plazas;
 };
 
 struct destinos_struct {
     string nombre;
     string Destino;
-    int dias;
+	int dias;
     double costo;
     string partida;
-    string cod;
+	string cod;
     int vacantes;
+};
+
+class Pago {
+private:
+    string tipoTarjeta;
+    string numeroTarjeta;
+    string fechaExpiracion;
+    string CVV;
+public:
+    Pago(const string& tipo, const string& numero, const string& fecha, const string& cvv)
+        : tipoTarjeta(tipo), numeroTarjeta(numero), fechaExpiracion(fecha), CVV(cvv) {}
+
+    bool procesarPago(double monto) {
+    ofstream archivo_montos(INGRESOS_ARCH, ios::app);
+    if (!archivo_montos.is_open()) {
+        cout << "Error al abrir el archivo de montos." << endl;
+        return false;
+    }
+    archivo_montos << monto << endl;
+    archivo_montos.close();
+    cout << "Pago realizado exitosamente." << endl;
+    return true;
+}
 };
 
 class Gestion {
 private:
     vector<clientes_struct> clientes_clase;
-    vector<destinos_struct> destinos_clase;
+	vector<destinos_struct> destinos_clase;
     double ingresos;
     bool registroCreado;
 
 public:
     void cargarClientesDesdeCSV();
     void cargarPaquetesDesdeCSV();
-    void hacerReserva(const string& numberCliente, const string& codPaquete, int vacantes);
+	void hacerReserva(const string& numberCliente, const string& codPaquete, int vacantes);
     void eliminarReserva(const string& numberCliente, const string& codPaquete, int vacantes);
     clientes_struct& buscarCliente_por_numero(const string& numeroBuscado);
     destinos_struct& buscarPaquetePorCodigo(const string& codigoBuscado);
-    void mostrarPaquetes();
+	void mostrarPaquetes();
     void mostrarIngresos();
     void registrarEnCSV(const string& nombreCliente, const string& destino);
-    void mostrarRegistrosCSV(const string& nombreCliente, const string& destino);
+	void mostrarRegistrosCSV(const string& nombreCliente, const string& destino);
     void manejarPromociones();
-    Gestion() : registroCreado(false) {};
+    void agregarNuevoCliente(const clientes_struct& nuevoCliente);
+    vector<clientes_struct>& obtenerClientes();
+	Gestion() : registroCreado(false) {};
 };
 
 
+vector<clientes_struct>& Gestion::obtenerClientes() {
+    return clientes_clase;
+}
+
+
 clientes_struct& Gestion::buscarCliente_por_numero(const string& numeroBuscado) {
-    for (auto& cliente : clientes_clase) {
+	for (auto& cliente : clientes_clase) {
         if (cliente.Number == numeroBuscado) {
             return cliente;
         }
-    }
+	}
     return clientes_clase[0];
 }
 
 destinos_struct& Gestion::buscarPaquetePorCodigo(const string& codigoBuscado) {
     for (auto& paquete : destinos_clase) {
         if (paquete.cod == codigoBuscado) {
-            return paquete;
+			return paquete;
         }
     }
-    return destinos_clase[0];
+	return destinos_clase[0];
 }
 
 void Gestion::cargarClientesDesdeCSV() {
-    ifstream archivo(ARCH_CLIENTES);
+	ifstream archivo(ARCH_CLIENTES);
     string linea;
     char delimitador = ',';
 
     if (!archivo.is_open()) {
         cout << "Error al abrir el archivo de clientes." << endl;
         return;
-    }
+	}
 
     getline(archivo, linea);
 
@@ -114,108 +145,144 @@ void Gestion::cargarClientesDesdeCSV() {
 
         getline(stream, cliente.Number, delimitador);
         getline(stream, cliente.Gender, delimitador);
-        getline(stream, cliente.GivenName, delimitador);
+		getline(stream, cliente.GivenName, delimitador);
         getline(stream, cliente.MiddleInitial, delimitador);
         getline(stream, cliente.Surname, delimitador);
         getline(stream, cliente.StreetAddress, delimitador);
-        getline(stream, cliente.City, delimitador);
+		getline(stream, cliente.City, delimitador);
         getline(stream, cliente.State, delimitador);
         getline(stream, cliente.ZipCode, delimitador);
-        getline(stream, cliente.EmailAddress, delimitador);
+		getline(stream, cliente.EmailAddress, delimitador);
         getline(stream, cliente.TelephoneNumber, delimitador);
         getline(stream, cliente.Birthday, delimitador);
         getline(stream, cliente.Age, delimitador);
-        getline(stream, cliente.CCType, delimitador);
+		getline(stream, cliente.CCType, delimitador);
         getline(stream, cliente.CCNumber, delimitador);
         getline(stream, cliente.CVV2, delimitador);
-        getline(stream, cliente.CCExpires, delimitador);
+		getline(stream, cliente.CCExpires, delimitador);
         getline(stream, cliente.Codigo, delimitador);
         getline(stream, cliente.Plazas, delimitador);
         clientes_clase.push_back(cliente);
-    }
+	}
 
     archivo.close();
 }
 
 void Gestion::cargarPaquetesDesdeCSV() {
     ifstream archivo(ARCH_DESTINOS);
-    string linea;
+	string linea;
     char delimitador = ',';
 
-    if (!archivo.is_open()) {
+	if (!archivo.is_open()) {
         cout << "Error al abrir el archivo de paquetes." << endl;
         return;
     }
 
     getline(archivo, linea);
 
-    while (getline(archivo, linea)) {
+	while (getline(archivo, linea)) {
         stringstream stream(linea);
         destinos_struct paquete;
 
-        getline(stream, paquete.nombre, delimitador);
+		getline(stream, paquete.nombre, delimitador);
         getline(stream, paquete.Destino, delimitador);
         stream >> paquete.dias;
-        stream.ignore();
+		stream.ignore();
         stream >> paquete.costo;
         stream.ignore();
         getline(stream, paquete.partida, delimitador);
-        getline(stream, paquete.cod, delimitador);
+		getline(stream, paquete.cod, delimitador);
         stream >> paquete.vacantes;
         stream.ignore();
 
         destinos_clase.push_back(paquete);
     }
 
-    archivo.close();
+	archivo.close();
 }
 
 void Gestion::hacerReserva(const string& numberCliente, const string& codPaquete, int vacantes) {
+
+    time_t now = time(0);
+    tm* localTime = localtime(&now);
+	char fechaActual[10];
+    strftime(fechaActual, sizeof(fechaActual), "%d-%b", localTime);
+
+    string mesActual = fechaActual;
+    mesActual = mesActual.substr(3);
+
+    string fechaActualConMesTresLetras = fechaActual;
+    fechaActualConMesTresLetras.replace(3, 3, mesActual);
+
     clientes_struct& cliente = buscarCliente_por_numero(numberCliente);
     destinos_struct& paquete = buscarPaquetePorCodigo(codPaquete);
 
-    if (cliente.Number.empty() || paquete.cod.empty()) {
+	if (cliente.Number.empty() || paquete.cod.empty()) {
         cout << "Cliente o paquete no encontrado." << endl;
+        return;
+	}
+
+    if (paquete.partida.compare(fechaActualConMesTresLetras) < 0) {
+		cout << "La fecha de partida para este paquete ya ha pasado. No es posible hacer la reserva." << endl;
         return;
     }
 
     if (paquete.vacantes < vacantes) {
         cout << "No hay suficientes vacantes para el paquete seleccionado." << endl;
         return;
-    }
+	}
 
-    ofstream archivo(ARCH_CLIENTES, ios::app);
-    archivo << numberCliente << "," << codPaquete << "," << vacantes << endl;
-    archivo.close();
+	cout << "Ingrese los detalles de su tarjeta de crédito:" << endl;
+    string tipoTarjeta, numeroTarjeta, fechaExpiracion, CVV;
+    cout << "Tipo de tarjeta (ej. Visa, Mastercard): ";
+    cin >> tipoTarjeta;
+	cout << "Número de tarjeta: ";
+    cin >> numeroTarjeta;
+    cout << "Fecha de expiracion (MM/YY): ";
+	cin >> fechaExpiracion;
+    cout << "CVV/CVC: ";
+    cin >> CVV;
 
-    paquete.vacantes -= vacantes;
-    ingresos += vacantes * paquete.costo;
+    Pago pago(tipoTarjeta, numeroTarjeta, fechaExpiracion, CVV);
 
-    cout << "Reserva realizada exitosamente."<<endl;
-    cout << "Vacantes disponibles para el paquete " << codPaquete << " actualizadas a : " << paquete.vacantes << endl;
+    double monto = vacantes * paquete.costo;
 
-    ofstream archivo_destinos(ARCH_DESTINOS);
-    if (!archivo_destinos.is_open()) {
-        cout << "Error al abrir el archivo de destinos." << endl;
-        return;
-    }
+	if (pago.procesarPago(monto)) {
+        ofstream archivo(ARCH_CLIENTES, ios::app);
+		archivo << numberCliente << "," << codPaquete << "," << vacantes << endl;
+        archivo.close();
 
-    archivo_destinos << "nombre,Destino,dias,costo,partida,cod,vacantes" << endl;
-    for (const auto& paquete : destinos_clase) {
-        archivo_destinos << paquete.nombre << "," << paquete.Destino << "," << paquete.dias << ","
-            << paquete.costo << "," << paquete.partida << "," << paquete.cod << ","
-            << paquete.vacantes << endl;
-    }
-    archivo_destinos.close();
+        paquete.vacantes -= vacantes;
+		ingresos += monto;
 
-    registrarEnCSV(buscarCliente_por_numero(numberCliente).GivenName, buscarPaquetePorCodigo(codPaquete).Destino);
+        cout << "Reserva realizada exitosamente."<<endl;
+		cout << "Vacantes disponibles para el paquete " << codPaquete << " actualizadas a : " << paquete.vacantes << endl;
+
+        ofstream archivo_destinos(ARCH_DESTINOS);
+		if (!archivo_destinos.is_open()) {
+            cout << "Error al abrir el archivo de destinos." << endl;
+            return;
+		}
+
+        archivo_destinos << "nombre,Destino,dias,costo,partida,cod,vacantes" << endl;
+        for (const auto& paquete : destinos_clase) {
+			archivo_destinos << paquete.nombre << "," << paquete.Destino << "," << paquete.dias << ","
+                << paquete.costo << "," << paquete.partida << "," << paquete.cod << ","
+                << paquete.vacantes << endl;
+		}
+        archivo_destinos.close();
+
+		registrarEnCSV(buscarCliente_por_numero(numberCliente).GivenName, buscarPaquetePorCodigo(codPaquete).Destino);
+    } else {
+        cout << "El pago ha sido rechazado. La reserva no pudo ser realizada." << endl;
+	}
 }
 
 void Gestion::eliminarReserva(const string& numberCliente, const string& codPaquete, int vacantes) {
-    clientes_struct& cliente = buscarCliente_por_numero(numberCliente);
+	clientes_struct& cliente = buscarCliente_por_numero(numberCliente);
     destinos_struct& paquete = buscarPaquetePorCodigo(codPaquete);
 
-    if (cliente.Number.empty() || paquete.cod.empty()) {
+	if (cliente.Number.empty() || paquete.cod.empty()) {
         cout << "Cliente o paquete no encontrado." << endl;
         return;
     }
@@ -226,38 +293,38 @@ void Gestion::eliminarReserva(const string& numberCliente, const string& codPaqu
     string linea;
     while (getline(archivo, linea)) {
         stringstream stream(linea);
-        string numCliente, codPaqueteReservado;
+		string numCliente, codPaqueteReservado;
         int plazasReservadas;
 
-        getline(stream, numCliente, ',');
+		getline(stream, numCliente, ',');
         getline(stream, codPaqueteReservado, ',');
         stream >> plazasReservadas;
         stream.ignore();
 
         if (numCliente == numberCliente && codPaqueteReservado == codPaquete) {
             paquete.vacantes += plazasReservadas;
-        }
+		}
         else {
             temp << numCliente << "," << codPaqueteReservado << "," << plazasReservadas << endl;
         }
-    }
+	}
     archivo.close();
     temp.close();
 
     remove(ARCH_CLIENTES);
     rename("temp.txt", ARCH_CLIENTES);
 
-    cout << "Reserva eliminada exitosamente." << endl;
+	cout << "Reserva eliminada exitosamente." << endl;
 }
 
 void Gestion::mostrarPaquetes() {
     cout << "Paquetes Turísticos Disponibles:" << endl;
     SALTO;
     for (const auto& paquete : destinos_clase) {
-        cout << "Nombre: [" << paquete.nombre << "], " << "Destino: [" << paquete.Destino << "], " << endl;
+		cout << "Nombre: [" << paquete.nombre << "], " << "Destino: [" << paquete.Destino << "], " << endl;
         cout << "Días: [" << paquete.dias << "], " << "Costo: [$" << fixed << setprecision(2) << paquete.costo << "]" << endl;
         cout << "Partida: " << paquete.partida << ", " << "Código: " << paquete.cod << endl;
-        cout << "Vacantes Disponibles: [" << paquete.vacantes << "]" << endl;
+		cout << "Vacantes Disponibles: [" << paquete.vacantes << "]" << endl;
         SALTO;
     }
 }
@@ -271,39 +338,39 @@ void Gestion::registrarEnCSV(const string& nombreCliente, const string& destino)
 
     if (!archivo.is_open()) {
         cout << "Error al abrir el archivo de registros." << endl;
-        return;
+		return;
     }
 
     archivo << nombreCliente << "," << destino << endl;
 
     cout << "Reserva registrada exitosamente en Registros.csv" << endl;
 
-    archivo.close();
+	archivo.close();
     registroCreado = true;
 }
 
 void Gestion::mostrarRegistrosCSV(const string& nombreCliente, const string& destino) {
     if (!registroCreado) {
         cout << "No existe aun un registro creado." << endl;
-        return;
+		return;
     }
 
     try {
-        ifstream archivo("Registros.csv");
+		ifstream archivo("Registros.csv");
         if (!archivo.is_open()) {
             throw runtime_error("Error al abrir el archivo.");
-        }
+		}
 
         cout << "Registro de Reservas realizadas:" << endl;
         SALTO;
 
         string linea;
         while (getline(archivo, linea)) {
-            cout << linea << endl;
+			cout << linea << endl;
         }
     }
     catch (exception& e) {
-        cout << "Error Inesperado" << e.what() << endl;
+		cout << "Error Inesperado" << e.what() << endl;
     }
 }
 
@@ -313,59 +380,76 @@ void Gestion::manejarPromociones() {
 
         if (!archivo.is_open()) {
             ofstream archivo_creado(ARCH_PROMOCIONES);
-            archivo_creado.close();
+			archivo_creado.close();
             cout << "Archivo 'promociones.csv' creado exitosamente." << endl;
         }
     }
 
     cout << "¿Qué deseas hacer?\n1. Leer el archivo\n2. Escribir en el archivo\n3. Borrar una línea del archivo\n";
     int opcion;
-    cin >> opcion;
+	cin >> opcion;
 
     switch (opcion) {
     case 1: {
-        ifstream archivo_lectura(ARCH_PROMOCIONES);
+		ifstream archivo_lectura(ARCH_PROMOCIONES);
         string linea;
         while (getline(archivo_lectura, linea)) {
-            cout << linea << endl;
+			cout << linea << endl;
         }
         break;
     }
-    case 2: {
+	case 2: {
         ofstream archivo_escritura(ARCH_PROMOCIONES, ios::app);
         cout << "Introduce la información de la promoción en formato CSV: ";
-        string info_promocion;
+		string info_promocion;
         cin.ignore();
         getline(cin, info_promocion);
         archivo_escritura << info_promocion << endl;
-        break;
+		break;
     }
     case 3: {
-        ifstream archivo_lectura(ARCH_PROMOCIONES);
+		ifstream archivo_lectura(ARCH_PROMOCIONES);
         ofstream temp("temp.csv");
         cout << "Introduce el número de línea que deseas borrar: ";
         int num_linea, contador_linea = 0;
-        cin >> num_linea;
+		cin >> num_linea;
         num_linea--;
         string linea;
-        while (getline(archivo_lectura, linea)) {
+		while (getline(archivo_lectura, linea)) {
             if (contador_linea != num_linea)
                 temp << linea << endl;
             contador_linea++;
-        }
+		}
         temp.close();
         if (remove(ARCH_PROMOCIONES) != 0) {
-            perror("Error eliminando el archivo");
+			perror("Error eliminando el archivo");
         } else {
             cout << "Archivo eliminado exitosamente." << endl;
         }
-        rename("temp.csv", ARCH_PROMOCIONES);
+		rename("temp.csv", ARCH_PROMOCIONES);
         break;
     }
-    default:
+	default:
         cout << "Opción no válida. Por favor, ingresa un número válido de opción." << endl;
         break;
     }
+}
+
+void Gestion::agregarNuevoCliente(const clientes_struct& nuevoCliente) {
+	ofstream archivo("nuevos_clientes.csv", ios::app);
+	if (!archivo.is_open()) {
+		cout << "Error al abrir el archivo de nuevos clientes." << endl;
+		return;
+	}
+	archivo << nuevoCliente.Number << "," << nuevoCliente.Gender << "," << nuevoCliente.GivenName << ","
+			<< nuevoCliente.MiddleInitial << "," << nuevoCliente.Surname << "," << nuevoCliente.StreetAddress << ","
+			<< nuevoCliente.City << "," << nuevoCliente.State << "," << nuevoCliente.ZipCode << ","
+			<< nuevoCliente.EmailAddress << "," << nuevoCliente.TelephoneNumber << "," << nuevoCliente.Birthday << ","
+			<< nuevoCliente.Age << "," << nuevoCliente.CCType << "," << nuevoCliente.CCNumber << ","
+			<< nuevoCliente.CVV2 << "," << nuevoCliente.CCExpires << "," << nuevoCliente.Codigo << ","
+			<< nuevoCliente.Plazas << endl;
+	archivo.close();
+	cout << "Nuevo cliente agregado exitosamente." << endl;
 }
 
 int main() {
@@ -380,25 +464,28 @@ int main() {
     empresa_turismo.cargarClientesDesdeCSV();
     empresa_turismo.cargarPaquetesDesdeCSV();
 
+	clientes_struct nuevoCliente;
+
     cout << "Bienvenido a nuestra agencia de turismo. " << endl;
     SALTO;
 
     while (true) {
         cout << "Menú de Opciones:" << endl;
-        cout << "1. Mostrar Paquetes Turísticos Disponibles" << endl;
+		cout << "1. Mostrar Paquetes Turísticos Disponibles" << endl;
         cout << "2. Realizar Reserva" << endl;
         cout << "3. Eliminar Reserva" << endl;
         cout << "4. Mostrar Ingresos Totales de la Empresa" << endl;
         cout << "5. Crear Archivo de Registros" << endl;
         cout << "6. Mostrar Registro de Reservas" << endl;
         cout << "7. Promociones" << endl;
-        cout << "8. SALIR" << endl;
+		cout << "8. Agregar un nuevo cliente" << endl;
+        cout << "9. SALIR" << endl;
         cout << "Ingrese el número de la opción que desea ejecutar: ";
 
         int opcion;
         cin >> opcion;
 
-        switch (opcion) {
+		switch (opcion) {
         case 1:
             empresa_turismo.mostrarPaquetes();
             break;
@@ -412,64 +499,114 @@ int main() {
 
             int numero = stoi(numero_cliente);
             if (numero < 1 || numero > 100) {
-                cout << "Número de cliente fuera del rango válido (1 al 100)." << endl;
+				cout << "Número de cliente fuera del rango válido (1 al 100)." << endl;
                 break;
             }
 
             cout << "Ingrese el código de destino que desea reservar: ";
             cin >> codigo_destino;
 
-            cout << "Ingrese el número de plazas que desea reservar: ";
+			cout << "Ingrese el número de plazas que desea reservar: ";
             cin >> numero_de_plazas;
 
             empresa_turismo.hacerReserva(numero_cliente, codigo_destino, numero_de_plazas);
             break;
         }
         case 3: {
-            string numero_cliente, codigo_destino;
+			string numero_cliente, codigo_destino;
             int numero_de_plazas;
 
             SALTO;
             cout << "Ingrese el ID del cliente: ";
             cin >> numero_cliente;
 
-            cout << "Ingrese el código de destino de la reserva que desea eliminar: ";
+			cout << "Ingrese el código de destino de la reserva que desea eliminar: ";
             cin >> codigo_destino;
 
             cout << "Ingrese el número de plazas que desea liberar: ";
             cin >> numero_de_plazas;
 
             empresa_turismo.eliminarReserva(numero_cliente, codigo_destino, numero_de_plazas);
-            break;
+			break;
         }
         case 4:
             empresa_turismo.mostrarIngresos();
             break;
         case 5:
             cout << "Ingrese el nombre del cliente: ";
-            cin.ignore();
+			cin.ignore();
             getline(cin, nombre_cliente);
 
             cout << "Ingrese el destino: ";
             getline(cin, destino);
 
             empresa_turismo.registrarEnCSV(nombre_cliente, destino);
-            break;
+			break;
         case 6:
             empresa_turismo.mostrarRegistrosCSV(nombre_cliente, destino);
             break;
         case 7:
             empresa_turismo.manejarPromociones();
             break;
-        case 8:
-            cout << "Gracias por utilizar nuestro servicio. ¡Hasta luego!" << endl;
-            return 0;
-        default:
-            cout << "Opción no válida. Por favor, ingrese un número válido de opción." << endl;
-            break;
-        }
-        SALTO;
-    }
+		case 8: {
+            clientes_struct nuevoCliente;
+            int ultimoNumeroCliente = empresa_turismo.obtenerClientes().empty() ? 0 : stoi(empresa_turismo.obtenerClientes().back().Number);
+            int nuevoNumeroCliente = ultimoNumeroCliente + 1;
 
-    return 0;
+            nuevoCliente.Number = to_string(nuevoNumeroCliente);
+
+            cout << "Género (M/F): ";
+            cin >> nuevoCliente.Gender;
+            cout << "Nombre: ";
+			cin.ignore();
+            getline(cin, nuevoCliente.GivenName);
+            cout << "Inicial del segundo nombre: ";
+            cin >> nuevoCliente.MiddleInitial;
+            cout << "Apellido: ";
+            cin.ignore();
+            getline(cin, nuevoCliente.Surname);
+			cout << "Dirección: ";
+            getline(cin, nuevoCliente.StreetAddress);
+            cout << "Ciudad: ";
+            getline(cin, nuevoCliente.City);
+            cout << "Estado: ";
+            getline(cin, nuevoCliente.State);
+            cout << "Código postal: ";
+			getline(cin, nuevoCliente.ZipCode);
+            cout << "Correo electrónico: ";
+            getline(cin, nuevoCliente.EmailAddress);
+            cout << "Número de teléfono: ";
+            getline(cin, nuevoCliente.TelephoneNumber);
+            cout << "Fecha de nacimiento (DD/MM/AAAA): ";
+            getline(cin, nuevoCliente.Birthday);
+			cout << "Edad: ";
+			getline(cin, nuevoCliente.Age);
+			cout << "Tipo de tarjeta de crédito: ";
+			getline(cin, nuevoCliente.CCType);
+			cout << "Número de tarjeta de crédito: ";
+			getline(cin, nuevoCliente.CCNumber);
+            cout << "CVV2: ";
+			getline(cin, nuevoCliente.CVV2);
+			cout << "Fecha de expiración de la tarjeta (MM/YY): ";
+			getline(cin, nuevoCliente.CCExpires);
+            cout << "Código: ";
+			getline(cin, nuevoCliente.Codigo);
+			cout << "Plazas: ";
+			getline(cin, nuevoCliente.Plazas);
+			empresa_turismo.agregarNuevoCliente(nuevoCliente);
+
+			cout << "Nuevo cliente agregado exitosamente." << endl;
+			break;
+		}
+		case 9:
+			cout << "Gracias por utilizar nuestro servicio. ¡Hasta luego!" << endl;
+			return 0;
+		default:
+			cout << "Opción no válida. Por favor, ingrese un número válido de opción." << endl;
+			break;
+		}
+		SALTO;
+	}
+
+	return 0;
 }
